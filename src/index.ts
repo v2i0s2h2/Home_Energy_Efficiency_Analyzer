@@ -173,6 +173,39 @@ export function getEnergyUsageHistory(id: string): Result<Vec<EnergyUsageData>, 
   });
 }
 
+// Function to calculate the total energy consumption for an assessment
+$query;
+export function calculateTotalConsumption(id: string): Result<number, string> {
+  // Parameter Validation: Validate the id parameter to ensure it's a valid UUID
+  if (!id) {
+    return Result.Err("Invalid ID format.");
+  }
+
+  return match(energyAssessmentStorage.get(id), {
+    Some: (assessment) => {
+      const totalConsumption = assessment.energyUsageHistory.reduce((total, data) => total + data.consumption, 0);
+      return Result.Ok<number, string>(totalConsumption);
+    },
+    None: () => Result.Err<number, string>(`Energy Assessment with ID=${id} not found.`),
+  });
+}
+
+// Function to get energy assessments with efficiency ratings above a threshold
+$query;
+export function getHighEfficiencyAssessments(threshold: number): Result<Vec<EnergyAssessment>, string> {
+  // Parameter Validation: Validate the threshold parameter
+  if (threshold <= 0) {
+    return Result.Err("Invalid threshold value. Threshold must be greater than 0.");
+  }
+
+  const highEfficiencyAssessments = energyAssessmentStorage.values().filter(
+    (assessment) => assessment.efficiencyRating >= threshold
+  );
+
+  return Result.Ok<Vec<EnergyAssessment>, string>(highEfficiencyAssessments);
+}
+
+
 globalThis.crypto = {
   //@ts-ignore
   getRandomValues: () => {
